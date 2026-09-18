@@ -123,7 +123,7 @@ local function find_nvim_for_path(abs_path)
 end
 
 -- the action -----------------------------------------------------------------
-
+-- TODO: refactor into get_path_under_cursor, find_running_nvim, and open_file
 local function open_path_under_cursor(window, pane)
 	local text = pane:get_lines_as_text()
 	if not text or text == "" then
