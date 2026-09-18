@@ -123,9 +123,8 @@ local function find_nvim_for_path(abs_path)
 end
 
 -- the action -----------------------------------------------------------------
--- TODO: refactor into get_path_under_cursor, find_running_nvim, and open_file
--- TODO: create wezterm-cfg-for-dev.lua (under same dir as this, resolve file path and use dofile)
-local function open_path_under_cursor(window, pane)
+
+local function get_path_under_cursor()
 	local text = pane:get_lines_as_text()
 	if not text or text == "" then
 		return
@@ -155,13 +154,14 @@ local function open_path_under_cursor(window, pane)
 	local path_part, line_no, col_no = split_line_col(token)
 	local abs_path = to_abs_path(path_part)
 
-	if not path_exists(abs_path) then
-		window:toast_notification("wezterm", "Not a file: " .. abs_path, nil, 3000)
-		return
-	end
+	return abs_path
+end
 
-	local server = find_nvim_for_path(abs_path)
+-- local function find_running_nvim()
 
+-- end
+
+local function open_path(file_path, nvim_instance)
 	if server then
 		if line_no then
 			local cmd = string.format(":e %s<CR>", abs_path)
@@ -199,6 +199,19 @@ local function open_path_under_cursor(window, pane)
 		table.insert(args, abs_path)
 		wezterm.run_child_process(args)
 	end
+end
+
+local function open_path_under_cursor(window, pane)
+	local abs_path = get_path_under_cursor()
+
+	if not path_exists(abs_path) then
+		window:toast_notification("wezterm", "Not a file: " .. abs_path, nil, 3000)
+		return
+	end
+
+	local nvim_server = find_nvim_for_path(abs_path)
+
+	open_path(abs_path, nvim_server)
 
 	window:perform_action(act.CopyMode("Close"), pane)
 end
