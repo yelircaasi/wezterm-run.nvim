@@ -124,6 +124,7 @@ end
 
 -- the action -----------------------------------------------------------------
 -- TODO: refactor into get_path_under_cursor, find_running_nvim, and open_file
+-- TODO: create wezterm-cfg-for-dev.lua (under same dir as this, resolve file path and use dofile)
 local function open_path_under_cursor(window, pane)
 	local text = pane:get_lines_as_text()
 	if not text or text == "" then
