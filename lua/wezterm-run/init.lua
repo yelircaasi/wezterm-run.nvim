@@ -32,8 +32,9 @@ local function map_run_current(key, direction, keymap_prefix)
 	adhoc_map("n", normal_action, "Send current block: WezTerm pane (" .. direction_lower .. ")")
 end
 
----@param key string
----@param opts WeztermRuntimeOpts
+---@param key           string
+---@param direction     Direction
+---@param keymap_prefix string
 local function map_run_file(key, direction, keymap_prefix)
 	local sequence = keymap_prefix .. key
 	local direction_lower = string.lower(direction)
@@ -45,6 +46,9 @@ local function map_run_file(key, direction, keymap_prefix)
 	map({ "n", "v" }, sequence, action, { desc = desc }) --, silent = true })
 end
 
+---@param key           string
+---@param direction     Direction
+---@param keymap_prefix string
 local function map_retrieve_output(key, direction, keymap_prefix)
 	print("TODO")
 end
