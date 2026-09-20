@@ -1,7 +1,8 @@
 local wezterm = require("wezterm")
 local config = wezterm.config_builder()
 
-dofile("/home/isaac/repos/wezterm-run.nvim/for_wezterm/wezterm-run.lua").apply(wezterm, config)
+local wezrun = dofile("/home/isaac/repos/wezterm-run.nvim/for_wezterm/wezterm-run.lua")
+wezrun.apply(config)
 
 return config
 
