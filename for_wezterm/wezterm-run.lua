@@ -216,7 +216,9 @@ function helpers.to_abs_path(p, cwd)
 	local is_absolute = string.match(p, "^/")
 
 	if not is_absolute then
-		if not string.match(cwd, "/$") then cwd = cwd .. "/" end
+		if not string.match(cwd, "/$") then
+			cwd = cwd .. "/"
+		end
 		p = cwd .. p
 	end
 
@@ -244,6 +246,38 @@ function helpers.expand_tilde(p)
 		return wezterm.home_dir .. p:sub(2)
 	end
 	return p
+end
+
+-- Split the location string into its constituent parts. One of:
+-- "path:line:col"
+-- " path(line,col)"
+-- " path(line:col)"
+-- "path:line"
+-- "path(line)"
+function helpers.split_line_col(token)
+	local path, line, col
+
+	path, line, col = token:match("^(.-):(%d+):(%d+)$")
+	if path then
+		return path, tonumber(line), tonumber(col)
+	end
+
+	path, line, col = token:match("^(.-)%((%d+)[:,](%d+)%)$")
+	if path then
+		return path, tonumber(line), tonumber(col)
+	end
+
+	path, line = token:match("^(.-):(%d+)$")
+	if path then
+		return path, tonumber(line), nil
+	end
+
+	path, line = token:match("^(.-)%((%d+)%)$")
+	if path then
+		return path, tonumber(line), nil
+	end
+
+	return token, nil, nil
 end
 
 -- ================================================================================================
@@ -284,7 +318,9 @@ function domain:token_under_copy_cursor(window, pane)
 			window:perform_action(act.CopyMode("MoveRight"), pane)
 			break
 		end
-		if candidate == text then break end
+		if candidate == text then
+			break
+		end
 		text = candidate
 	end
 
@@ -304,6 +340,16 @@ function domain:token_under_copy_cursor(window, pane)
 	end
 
 	window:perform_action(act.ClearSelection, pane)
+
+	return text
+end
+
+function domain:token_under_search(window, pane)
+	local text = window:get_selection_text_for_pane(pane)
+
+	if not text or text == "" then
+		return nil
+	end
 
 	return text
 end
@@ -364,19 +410,6 @@ function domain:token_under_cursor(line, col)
 	return token ~= "" and token or nil
 end
 
--- Split "path:line:col" or "path:line" into its constituent parts.
-function domain:split_line_col(token)
-	local path, line, col = token:match("^(.-):(%d+):(%d+)$")
-	if path then
-		return path, tonumber(line), tonumber(col)
-	end
-	path, line = token:match("^(.-):(%d+)$")
-	if path then
-		return path, tonumber(line), nil
-	end
-	return token, nil, nil
-end
-
 -- Find a running nvim server whose cwd is a parent of abs_path.
 function domain:find_nvim_for_path(abs_path)
 	local handle = io.popen("nvr --serverlist 2>/dev/null")
@@ -432,9 +465,7 @@ function domain:get_cursor_line(window, pane)
 	return line, pos.x, pos.y
 end
 
-function domain:get_path_under_cursor(window, pane)
-	local token = domain:token_under_copy_cursor(window, pane)
-
+function domain:get_path_from_token(window, pane, token)
 	if not token then
 		window:toast_notification("wezterm", "No token under cursor", nil, 2000)
 		return nil
@@ -442,7 +473,7 @@ function domain:get_path_under_cursor(window, pane)
 
 	print("token is " .. token)
 
-	local path_part, line_no, col_no = domain:split_line_col(token)
+	local path_part, line_no, col_no = helpers.split_line_col(token)
 
 	local cwd_uri = pane:get_current_working_dir()
 	if not cwd_uri then
@@ -461,44 +492,16 @@ function domain:get_path_under_cursor(window, pane)
 	return abs_path, line_no, col_no
 end
 
-function domain:OLD_get_path_under_cursor(window, pane)
-	local line, col, row = domain:get_cursor_line(window, pane)
+function domain:get_path_under_cursor(window, pane)
+	local token = domain:token_under_copy_cursor(window, pane)
 
-	wezterm.log_info(
-		"get_path_under_cursor: " .. "line=" .. tostring(line) .. " col=" .. tostring(col) .. " row=" .. tostring(row)
-	)
+	return domain:get_path_from_token(window, pane, token)
+end
 
-	if not line then
-		window:toast_notification("wezterm", "get_cursor_line returned nil line", nil, 2000)
-		return nil
-	end
+function domain:get_path_under_search(window, pane)
+	local token = domain:token_under_search(window, pane)
 
-	local token = domain:token_under_cursor(line, col)
-
-	wezterm.log_info("token_under_cursor returned: " .. tostring(token))
-
-	if not token then
-		window:toast_notification("wezterm", "No token under cursor", nil, 2000)
-		return nil
-	end
-
-	wezterm.log_info("cursor token = " .. token)
-
-	local path_part, line_no, col_no = domain:split_line_col(token)
-
-	local cwd_uri = pane:get_current_working_dir()
-	if not cwd_uri then
-		return nil
-	end
-
-	local cwd = cwd_uri.file_path
-	if not cwd then
-		return nil
-	end
-
-	local abs_path = helpers.to_abs_path(path_part, cwd)
-
-	return abs_path, line_no, col_no
+	return domain:get_path_from_token(window, pane, token)
 end
 
 function domain:open_path(abs_path, nvim_server, line_no, col_no)
@@ -579,6 +582,34 @@ function M.apply(config)
 		window:perform_action(act.CopyMode("Close"), pane)
 	end
 
+	local function open_search_result_path(window, pane)
+		local abs_path, line_no, col_no = domain:get_path_under_search(window, pane)
+
+		if not abs_path then
+			return
+		end
+
+		if not helpers.path_exists(abs_path) then
+			window:toast_notification("wezterm", "Not a file: " .. abs_path, nil, 3000)
+			return
+		end
+
+		local nvim_server = domain:find_nvim_for_path(abs_path)
+
+		domain:open_path(abs_path, nvim_server, line_no, col_no)
+
+		window:perform_action(act.CopyMode("Close"), pane)
+	end
+
+	local path_search_keybind = {
+		key = "p",
+		mods = "ALT",
+		action = act.Multiple({
+			act.Search({ Regex = PATH_LOCATION_SEARCH_REGEX }),
+			act.CopyMode("AcceptPattern"),
+		}),
+	}
+
 	-- Global keybinds --------------------------------------------------------
 
 	local config_keys = config.keys
@@ -589,11 +620,7 @@ function M.apply(config)
 			mods = "ALT",
 			action = act.ActivateCopyMode,
 		},
-		{
-			key = "p",
-			mods = "ALT",
-			action = act.Search({ Regex = PATH_LOCATION_SEARCH_REGEX }),
-		},
+		path_search_keybind,
 	}
 
 	config.keys = helpers.update_table(config_keys, global_binds)
@@ -618,13 +645,7 @@ function M.apply(config)
 			mods = "ALT",
 			action = act.CopyMode("PriorMatch"),
 		},
-		{
-			key = "p",
-			mods = "ALT",
-			action = act.Search({
-				Regex = PATH_LOCATION_SEARCH_REGEX,
-			}),
-		},
+		path_search_keybind,
 		{
 			key = "o",
 			mods = "NONE",
@@ -694,7 +715,7 @@ function M.apply(config)
 			mods = "ALT",
 			action = act.Multiple({
 				act.CopyMode("Close"),
-				wezterm.action_callback(open_path_under_cursor),
+				wezterm.action_callback(open_search_result_path),
 			}),
 		},
 	}
