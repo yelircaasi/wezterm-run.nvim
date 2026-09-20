@@ -30,6 +30,7 @@ wezterm --config-file $HOME/repos/wezterm-run.nvim/for_wezterm/wezterm-cfg-for-d
 
 ## Roadmap
 
+https://wezterm.org/config/key-tables.html
 - [ ] [read](https://wezterm.org/config/lua/keyassignment/QuickSelect.html)
 - [ ] [read](https://wezterm.org/quickselect.html)
 - [ ] [read](https://wezterm.org/config/lua/keyassignment/QuickSelectArgs.html)

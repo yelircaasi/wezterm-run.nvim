@@ -2,12 +2,14 @@ local wezterm = require("wezterm")
 
 -- This is deliberately broad.
 -- The Lua parser below decides whether the resulting match is actually a filesystem path.
-PATH_LOCATION_SEARCH_REGEX = "(?x)(?:" .. table.concat({
-	[[File[ \t]+["'][^"'\n]+["'][ \t]*,[ \t]*line[ \t]+\d+]],
-	[[[^ \t\n"'<>|]+:\d+(?::\d+)?]],
-	[[[^ \t\n"'<>|]+\(\d+(?:,\d+)?\)]],
-	[[[^ \t\n"'<>|]+?/[^ \t\n"'<>|]+]],
-}, "|") .. ")"
+PATH_LOCATION_SEARCH_REGEX = "(?x)(?:"
+	.. table.concat({
+		[[File[ \t]+["'][^"'\n]+["'][ \t]*,[ \t]*line[ \t]+\d+]],
+		[[[^ \t\n"'<>|]+:\d+(?::\d+)?]],
+		[[[^ \t\n"'<>|]+\(\d+(?:,\d+)?\)]],
+		[[[^ \t\n"'<>|]+?/[^ \t\n"'<>|]+]],
+	}, "|")
+	.. ")"
 
 print(PATH_LOCATION_SEARCH_REGEX)
 
@@ -78,6 +80,21 @@ PATH_LOCATION_REGEX = [[
 -- ================================================================================================
 
 local helpers = {}
+
+function helpers.get_key_table(config, table_name)
+	key_table = config.key_tables[table_name] or wezterm.gui.default_key_tables()[table_name]
+
+	assert(key_table ~= nil)
+	return key_table
+end
+
+function helpers.update_table(tbl, to_insert)
+	for _, new_element in ipairs(to_insert) do
+		table.insert(tbl, new_element)
+	end
+
+	return tbl
+end
 
 function helpers.parse_location(text)
 	if not text then
@@ -523,8 +540,9 @@ local M = {}
 function M.apply(config)
 	local act = wezterm.action
 
-	print("applying")
+	print("applying wezterm-run")
 	config.keys = config.keys or {}
+	config.key_tables = config.key_tables or {}
 
 	local function open_path_under_cursor(window, pane)
 		local abs_path, line_no, col_no = domain:get_path_under_cursor(window, pane)
@@ -545,72 +563,138 @@ function M.apply(config)
 		window:perform_action(act.CopyMode("Close"), pane)
 	end
 
-	table.insert(config.keys, {
-		key = "u",
-		mods = "ALT",
-		action = act.ActivateCopyMode,
-	})
+	-- Global keybinds --------------------------------------------------------
 
-	table.insert(config.keys, {
-		key = "p",
-		mods = "ALT",
-		action = act.Search({
-			Regex = PATH_LOCATION_SEARCH_REGEX,
-		}),
-	})
+	local config_keys = config.keys
 
-	config.key_tables = config.key_tables or {}
-	local copy_mode = config.key_tables.copy_mode or wezterm.gui.default_key_tables().copy_mode
+	local global_binds = {
+		{
+			key = "u",
+			mods = "ALT",
+			action = act.ActivateCopyMode,
+		},
+		{
+			key = "p",
+			mods = "ALT",
+			action = act.Search({ Regex = PATH_LOCATION_SEARCH_REGEX }),
+		},
+	}
 
-	table.insert(copy_mode, {
-		key = "o",
-		mods = "ALT",
-		action = wezterm.action_callback(open_path_under_cursor),
-	})
+	config.keys = helpers.update_table(config_keys, global_binds)
 
-	table.insert(copy_mode, {
-		key = "n",
-		mods = "ALT",
-		action = act.CopyMode("NextMatch"),
-	})
+	-- CopyMode keybinds ------------------------------------------------------
 
-	table.insert(copy_mode, {
-		key = "N",
-		mods = "ALT",
-		action = act.CopyMode("PriorMatch"),
-	})
+	local copy_mode = helpers.get_key_table(config, "copy_mode")
 
-	table.insert(copy_mode, {
-		key = "p",
-		mods = "ALT",
-		action = act.Search({
-			Regex = PATH_LOCATION_SEARCH_REGEX,
-		}),
-	})
+	local copy_mode_binds = {
+		{
+			key = "o",
+			mods = "ALT",
+			action = wezterm.action_callback(open_path_under_cursor),
+		},
+		{
+			key = "n",
+			mods = "ALT",
+			action = act.CopyMode("NextMatch"),
+		},
+		{
+			key = "N",
+			mods = "ALT",
+			action = act.CopyMode("PriorMatch"),
+		},
+		{
+			key = "p",
+			mods = "ALT",
+			action = act.Search({
+				Regex = PATH_LOCATION_SEARCH_REGEX,
+			}),
+		},
+		{
+			key = "o",
+			mods = "NONE",
 
-	table.insert(copy_mode, {
-		key = "o",
-		mods = "NONE",
+			action = act.QuickSelectArgs({
+				label = "open path/location in nvim",
 
-		action = act.QuickSelectArgs({
-			label = "open path/location in nvim",
+				patterns = {
+					[[File\s+["'][^"']+["']\s*,\s*line\s+\d+]],
+					[[[^ \t\n"'<>|]+:\d+(?::\d+)?]],
+					[[[^ \t\n"'<>|]+\(\d+(?:,\d+)?\)]],
+					[[(?:/|%./|%.%./|~/)[^ \t\n"'<>|]+]],
+				},
 
-			patterns = {
-				[[File\s+["'][^"']+["']\s*,\s*line\s+\d+]],
-				[[[^ \t\n"'<>|]+:\d+(?::\d+)?]],
-				[[[^ \t\n"'<>|]+\(\d+(?:,\d+)?\)]],
-				[[(?:/|%./|%.%./|~/)[^ \t\n"'<>|]+]],
-			},
+				scope_lines = 1000,
 
-			scope_lines = 1000,
+				action = wezterm.action_callback(function(window, pane)
+					open_location(window, pane)
+				end),
+			}),
+		},
+	}
 
-			action = wezterm.action_callback(function(window, pane)
-				open_location(window, pane)
-			end),
-		}),
-	})
+	config.key_tables.copy_mode = helpers.update_table(copy_mode, copy_mode_binds)
 
-	config.key_tables.copy_mode = copy_mode
+	-- SearchMode keybinds ----------------------------------------------------
+
+	local search_mode = helpers.get_key_table(config, "search_mode")
+
+	local search_mode_binds = {
+		-- Accept the current search match and immediately hand off to the
+		-- path-opening pipeline. This is the "search, then open" fast path:
+		-- Alt+u in global mode -> type a pattern -> Alt+o here -> nvim opens
+		-- at the matched location.
+
+		-- {
+		-- 	key = "o",
+		-- 	mods = "ALT",
+		-- 	action = wezterm.action_callback(function(window, pane)
+		-- 		-- Commit the search so Copy Mode is positioned at the match
+		-- 		-- and the selection/match is materialized.
+		-- 		window:perform_action(act.CopyMode("AcceptPattern"), pane)
+
+		-- 		-- Now the Copy Mode cursor sits on the match. Delegate to the
+		-- 		-- same callback Copy Mode uses, so behavior is identical.
+		-- 		open_path_under_cursor(window, pane)
+		-- 	end),
+		-- },
+
+		{
+			key = "n",
+			mods = "ALT",
+			action = act.CopyMode("NextMatch"),
+		},
+		{
+			key = "N",
+			mods = "ALT",
+			action = act.CopyMode("PriorMatch"),
+		},
+		{
+			key = "p",
+			mods = "ALT",
+			action = act.Search({ Regex = PATH_LOCATION_SEARCH_REGEX }),
+		},
+		{
+			key = "o",
+			mods = "ALT",
+			action = act.Multiple({
+				act.CopyMode("Close"),
+				wezterm.action_callback(open_path_under_cursor),
+			}),
+		},
+	}
+
+	config.key_tables.search_mode = helpers.update_table(search_mode, search_mode_binds)
+
+	-- For debugging ----------------------------------------------------------
+
+	local function get_keys(t)
+		local keys = {}
+		for key, _ in pairs(t) do
+			table.insert(keys, key)
+		end
+		return keys
+	end
+	print(get_keys(wezterm.gui.default_key_tables()))
 
 	return config
 end
