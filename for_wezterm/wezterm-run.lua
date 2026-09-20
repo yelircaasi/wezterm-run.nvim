@@ -195,8 +195,9 @@ function helpers.path_exists(path)
 	return success
 end
 
-function helpers.search_next_path(wz_act)
-	return wz_act.Search({
+-- TODO: remove
+function helpers.search_next_path()
+	return act.Search({
 		Regex = PATH_LOCATION_SEARCH_REGEX,
 	})
 end
@@ -510,6 +511,7 @@ function domain:open_path(abs_path, nvim_server, line_no, col_no)
 			})
 		end
 	else
+		local editor = os.getenv("EDITOR") or "nvim"
 		local args = {
 			"wezterm",
 			"cli",
@@ -518,7 +520,7 @@ function domain:open_path(abs_path, nvim_server, line_no, col_no)
 			"--percent",
 			"50",
 			"--",
-			"nvim",
+			editor,
 		}
 
 		if line_no then
