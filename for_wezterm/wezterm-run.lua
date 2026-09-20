@@ -5,9 +5,10 @@ local wezterm = require("wezterm")
 PATH_LOCATION_SEARCH_REGEX = "(?x)(?:"
 	.. table.concat({
 		[[File[ \t]+["'][^"'\n]+["'][ \t]*,[ \t]*line[ \t]+\d+]],
-		[[[^ \t\n"'<>|]+:\d+(?::\d+)?]],
+		[[[^ \t\n"'<>|]+?[a-z][^ \t\n"'<>|]+:\d+(?:[:,]\d+)?]],
 		[[[^ \t\n"'<>|]+\(\d+(?:,\d+)?\)]],
 		[[[^ \t\n"'<>|]+?/[^ \t\n"'<>|]+]],
+		[[[^ \t\n"'<>|]+?\.[a-z]+]],
 	}, "|")
 	.. ")"
 
@@ -207,11 +208,19 @@ function helpers.trim(s)
 end
 
 function helpers.to_abs_path(p, cwd)
+	wezterm.log_info("p is " .. p)
+	wezterm.log_info("cwd is " .. cwd)
 	p = helpers.expand_tilde(p)
+	wezterm.log_info("p is " .. p)
 
-	if p:sub(1, 1) ~= "/" then
-		p = cwd .. "/" .. p
+	local is_absolute = string.match(p, "^/")
+
+	if not is_absolute then
+		if not string.match(cwd, "/$") then cwd = cwd .. "/" end
+		p = cwd .. p
 	end
+
+	wezterm.log_info("p is " .. p)
 
 	local ok, stdout = wezterm.run_child_process({
 		"realpath",
@@ -271,10 +280,11 @@ function domain:token_under_copy_cursor(window, pane)
 	while true do
 		window:perform_action(act.CopyMode("MoveLeft"), pane)
 		local candidate = selected()
-		if candidate == text or not is_path_char(candidate:sub(1, 1)) then
+		if not is_path_char(candidate:sub(1, 1)) then
 			window:perform_action(act.CopyMode("MoveRight"), pane)
 			break
 		end
+		if candidate == text then break end
 		text = candidate
 	end
 
@@ -430,6 +440,8 @@ function domain:get_path_under_cursor(window, pane)
 		return nil
 	end
 
+	print("token is " .. token)
+
 	local path_part, line_no, col_no = domain:split_line_col(token)
 
 	local cwd_uri = pane:get_current_working_dir()
@@ -441,6 +453,8 @@ function domain:get_path_under_cursor(window, pane)
 	if not cwd then
 		return nil
 	end
+
+	print(path_part)
 
 	local abs_path = helpers.to_abs_path(path_part, cwd)
 
