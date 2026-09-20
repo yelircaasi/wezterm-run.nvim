@@ -39,13 +39,15 @@ function M.get_visual_selection()
 	return table.concat(lines, "\n")
 end
 
---- If in normal mode, check for treesitter and if it is available, send current 'block'; otherwise fall back to sending line.
+--- If in normal mode, check for treesitter and if it is available,
+---   send current 'block'; otherwise fall back to sending line.
 function M.get_current_block()
 	-- Attempt treesitter first
 	local ok, node = pcall(vim.treesitter.get_node)
 	if ok and node then
 		-- Walk up the tree to find a meaningful top-level block:
-		--   a statement, definition, declaration, or expression at the root's direct child level.
+		--   a statement, definition, declaration, or expression at the root's
+		--   direct child level.
 		-- These type fragments cover most languages' top-level constructs.
 		local block_types = {
 			-- generic
