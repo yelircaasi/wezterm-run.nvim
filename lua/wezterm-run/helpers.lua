@@ -4,6 +4,7 @@ local M = {}
 ---@param cmd string[]
 ---@return string output, integer exit_code
 function M.run(cmd)
+print("CALLING helpers.run")
 	local out = {}
 	local obj = vim.system(cmd, { text = true }):wait()
 	return vim.trim(obj.stdout or ""), obj.code
@@ -14,6 +15,7 @@ end
 ---@param  s  string
 ---@return    string
 function M.shell_escape(s)
+print("CALLING helpers.shell_escape")
 	return "'" .. s:gsub("'", "'\\''") .. "'"
 end
 
@@ -21,6 +23,7 @@ end
 ---@param text string
 ---@return     string
 function M.ensure_newline(text)
+print("CALLING helpers.ensure_newline")
 	if text:sub(-1) ~= "\n" then
 		return text .. "\n"
 	end
@@ -31,10 +34,12 @@ end
 ---@param new? WeztermRunSetupOpts
 ---@return     WeztermRunSetupOpts
 function M.merge_opts(old, new)
+print("CALLING helpers.merge_opts")
 	return vim.tbl_deep_extend("force", old, new or {})
 end
 
 function M.as_title(s)
+print("CALLING helpers.as_title")
 	return s:sub(1, 1):upper() .. s:sub(2):lower()
 end
 

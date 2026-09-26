@@ -2,6 +2,8 @@ local helpers = require("wezterm-run.helpers")
 local wez = require("wezterm-run.wezterm-interaction")
 local selection = require("wezterm-run.selection")
 
+local _notify = print -- vim.notify
+
 local M = {}
 
 -- public API -------------------------------------------------------------------------------------
@@ -10,14 +12,15 @@ local M = {}
 ---@param text string
 ---@param opts WeztermRuntimeOpts
 function M.send_text(text, opts)
+print("CALLING M.send_text")
 	if opts.pick then
 		wez.pick_pane(function(pane_id)
 			if pane_id then
 				local ok, err = wez.send_to_pane(pane_id, text)
 				if not ok then
-					vim.notify("wezterm_send: " .. (err or "unknown error"), vim.log.levels.ERROR)
+					notify("wezterm_send: " .. (err or "unknown error"), vim.log.levels.ERROR)
 				else
-					vim.notify(("wezterm_send: sent to pane %s"):format(pane_id), vim.log.levels.INFO)
+					notify(("wezterm_send: sent to pane %s"):format(pane_id), vim.log.levels.INFO)
 				end
 			end
 		end)
@@ -26,15 +29,15 @@ function M.send_text(text, opts)
 
 	local pane_id, err = wez.resolve_pane(opts)
 	if not pane_id then
-		vim.notify("wezterm_send: " .. (err or "unknown error"), vim.log.levels.WARN)
+		_notify("wezterm_send: " .. (err or "unknown error"), vim.log.levels.WARN)
 		return
 	end
 
 	local ok, send_err = wez.send_to_pane(pane_id, text)
 	if not ok then
-		vim.notify("wezterm_send: " .. (send_err or "unknown error"), vim.log.levels.ERROR)
+		_notify("wezterm_send: " .. (send_err or "unknown error"), vim.log.levels.ERROR)
 	else
-		vim.notify(("wezterm_send: sent to pane %s"):format(pane_id), vim.log.levels.INFO)
+		_notify(("wezterm_send: sent to pane %s"):format(pane_id), vim.log.levels.INFO)
 	end
 end
 
@@ -42,12 +45,13 @@ end
 --- Prepare the command to execute the current file.
 ---@param opts? WeztermRuntimeOpts
 function M.make_current_file_command(opts)
+print("CALLING M.make_current_file_command")
 	local file_path = vim.api.nvim_buf_get_name(0)
 	local file_type = vim.bo.filetype
 
 	local runner = opts.file_runners[file_type]
 	if not runner then
-		vim.notify("wezterm_send: no runner configured for filetype: " .. file_type, vim.log.levels.WARN)
+		_notify("wezterm_send: no runner configured for filetype: " .. file_type, vim.log.levels.WARN)
 		return nil
 	elseif type(runner) == "function" then
 		return runner()
@@ -61,6 +65,7 @@ function M.make_current_file_command(opts)
 end
 
 function M.run_current_file(opts)
+print("CALLING M.run_current_file")
 	print(vim.inspect(opts))
 	local command = M.make_current_file_command(opts)
 	if not command then
@@ -76,13 +81,13 @@ function M.run_current_file(opts)
 	if shell_pane then
 		local ok, err = wez.send_to_pane(shell_pane, command)
 		if not ok then
-			vim.notify("wezterm_send: " .. (err or "unknown error"), vim.log.levels.ERROR)
+			_notify("wezterm_send: " .. (err or "unknown error"), vim.log.levels.ERROR)
 		end
 	else
 		-- No shell pane found: spawn one to the right, then send
 		local spawn_out, code = helpers.run({ "wezterm", "cli", "split-pane", "--right", "--percent", "40" })
 		if code ~= 0 then
-			vim.notify("wezterm_send: could not open a new pane", vim.log.levels.ERROR)
+			_notify("wezterm_send: could not open a new pane", vim.log.levels.ERROR)
 			return
 		end
 		local new_pane_id = vim.trim(spawn_out)
@@ -90,7 +95,7 @@ function M.run_current_file(opts)
 		vim.defer_fn(function()
 			local ok, err = wez.send_to_pane(new_pane_id, command)
 			if not ok then
-				vim.notify("wezterm_send: " .. (err or "unknown error"), vim.log.levels.ERROR)
+				_notify("wezterm_send: " .. (err or "unknown error"), vim.log.levels.ERROR)
 			end
 		end, 300)
 	end
@@ -98,6 +103,7 @@ end
 
 ---@param is_selection bool
 local function make_send_current(is_selection)
+print("CALLING make_send_current")
 	local text_getter, text_type
 	if is_selection then
 		text_getter = selection.get_visual_selection
@@ -113,20 +119,21 @@ local function make_send_current(is_selection)
 	---@param opts? WeztermRuntimeOpts
 	---@return nil
 	local function inner_send_current(opts)
+print("CALLING inner_send_current")
 		local text = text_getter()
 		if text == "" then
-			vim.notify("wezterm-run.nvim: empty " .. text_type, vim.log.levels.WARN)
+			_notify("wezterm-run.nvim: empty " .. text_type, vim.log.levels.WARN)
 			return
 		end
 
 		local pane_id, err = wez.resolve_pane(opts)
 		if not pane_id then
-			vim.notify("wezterm-run.nvim: " .. (err or "unknown error"), vim.log.levels.WARN)
+			_notify("wezterm-run.nvim: " .. (err or "unknown error"), vim.log.levels.WARN)
 			return
 		end
 
 		-- Snapshot before sending so retrieve_output can diff against it
-		M.snapshot_pane(opts)
+		wez.snapshot_pane(opts)
 		M.send_text(text, opts)
 
 		if opts.capture == "auto" then
@@ -148,6 +155,7 @@ end
 
 ---@param window_info ScratchWindowInfo
 function M.open_scratch(window_info)
+print("CALLING M.open_scratch")
 	-- use window ID and/or path to create/identify window and file location
 	-- cases:
 	--     id and path: validate

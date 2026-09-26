@@ -9,6 +9,7 @@ local toplevel_functions = require("wezterm-run.toplevel")
 local helpers = require("wezterm-run.helpers")
 
 local map = vim.keymap.set
+local _notify = print -- vim.notify
 
 ---@type Direction[]
 local pane_directions = { "left", "right", "up", "down", "next", "prev" }
@@ -96,7 +97,7 @@ local function create_user_commands()
 		vim.api.nvim_create_user_command(M.opts.command_prefixes.run_current, function(cmd_opts)
 			local raw_dir = cmd_opts.args ~= "" and cmd_opts.args or M.opts.default_direction
 			if not raw_dir then
-				vim.notify("wezterm-run: no direction specified", vim.log.levels.WARN)
+				_notify("wezterm-run: no direction specified", vim.log.levels.WARN)
 				return
 			end
 			local direction = helpers.as_title(raw_dir)
@@ -206,7 +207,7 @@ M.open_scratch = toplevel_functions.open_scratch
 ---@param config?  WeztermRunConfig  User configuration options.
 function M.setup(config)
 	if not toplevel_functions.is_wezterm() then
-		vim.notify(
+		_notify(
 			"wezterm-run.nvim: Skipping setup (not running inside WezTerm). $TERM_PROGRAM is '"
 				.. tostring(vim.env.TERM_PROGRAM)
 				.. "'",
@@ -243,7 +244,7 @@ function M.setup(config)
 		-- Toggle capture mode on the fly
 		map("n", M.opts.prefix .. "tc", function()
 			M.opts.capture = (M.opts.capture == "auto") and "explicit" or "auto"
-			vim.notify("wezterm-run.nvim: capture mode = " .. M.opts.capture, vim.log.levels.INFO)
+			_notify("wezterm-run.nvim: capture mode = " .. M.opts.capture, vim.log.levels.INFO)
 		end, { desc = "wezterm-run.nvim: toggle capture mode (auto/explicit)" })
 	end
 
