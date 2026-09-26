@@ -26,22 +26,8 @@ local pane_directions = { "left", "right", "up", "down", "next", "prev" }
 ---@field include_ansi_codes? boolean    Preserve ANSI escape sequences when retrieving output.
 ---@field pattern?            string     Optional search or match pattern.
 
----@class WeztermRunConfig
----@field prefix                   string                    Keymap prefix (default: `"<leader>w"`).
----@field suffix_key_run_current   string                    Keymap suffix for running current node/selection.
----@field suffix_key_run_file string Keymap suffix for running current file.
----@field suffix_key_output string Keymap suffix for retrieving output.
----@field default_direction Direction Default WezTerm pane direction.
----@field create_keymaps boolean Automatically bind default keymaps.
----@field create_commands boolean Automatically create user commands.
----@field command_prefix_run_current string Command name for running current node/selection.
----@field command_prefix_run_file  string                    Command name for running current file.
----@field command_prefix_output    string                    Command name for retrieving output.
----@field direction_keys           table<string, Direction>  Map of key suffixes to directions.
----@field capture                  CaptureMode               Capture strategy mode.
-
 ---@class WeztermRunModule
----@field opts WeztermRunConfig  Active plugin configuration options.
+---@field opts                WeztermRunConfig   Active plugin configuration options.
 local M = {}
 M.opts = require("wezterm-run.config")
 
@@ -61,6 +47,7 @@ end
 ---@param keymap_prefix string     Full prefix string.
 local function map_run_current(key, direction, keymap_prefix)
 	local sequence = keymap_prefix .. key
+	print("Mapping sequence " .. sequence)
 	local direction_lower = string.lower(direction)
 	local send_opts = { direction = helpers.as_title(direction) }
 
@@ -105,8 +92,8 @@ end
 
 local function create_user_commands()
 	-- WeztermSend
-	if M.opts.command_prefix_run_current then
-		vim.api.nvim_create_user_command(M.opts.command_prefix_run_current, function(cmd_opts)
+	if M.opts.command_prefixes.run_current then
+		vim.api.nvim_create_user_command(M.opts.command_prefixes.run_current, function(cmd_opts)
 			local raw_dir = cmd_opts.args ~= "" and cmd_opts.args or M.opts.default_direction
 			if not raw_dir then
 				vim.notify("wezterm-run: no direction specified", vim.log.levels.WARN)
@@ -129,15 +116,15 @@ local function create_user_commands()
 	end
 
 	-- WeztermRunFile
-	if M.opts.command_prefix_run_file then
-		vim.api.nvim_create_user_command(M.opts.command_prefix_run_file, function()
+	if M.opts.command_prefixes.run_file then
+		vim.api.nvim_create_user_command(M.opts.command_prefixes.run_file, function()
 			M.run_current_file()
 		end, {})
 	end
 
 	-- WeztermRetrieve
-	if M.opts.command_prefix_output then
-		vim.api.nvim_create_user_command(M.opts.command_prefix_output, function(cmd_opts)
+	if M.opts.command_prefixes.retrieve_output then
+		vim.api.nvim_create_user_command(M.opts.command_prefixes.retrieve_output, function(cmd_opts)
 			local args = vim.split(cmd_opts.args, "%s+", { trimempty = true })
 			---@type WeztermRunOpts
 			local local_opts = {}
@@ -231,9 +218,9 @@ function M.setup(config)
 	M.opts = helpers.merge_opts(M.opts, config or {})
 
 	if M.opts.create_keymaps then
-		local prefix_current = M.opts.prefix .. M.opts.suffix_key_run_current
-		local prefix_file = M.opts.prefix .. M.opts.suffix_key_run_file
-		local prefix_output = M.opts.prefix .. M.opts.suffix_key_output
+		local prefix_current = M.opts.prefix .. M.opts.suffix_keys.run_current
+		local prefix_file = M.opts.prefix .. M.opts.suffix_keys.run_file
+		local prefix_output = M.opts.prefix .. M.opts.suffix_keys.output
 
 		for k, d in pairs(M.opts.direction_keys or {}) do
 			map_run_current(k, d, prefix_current)

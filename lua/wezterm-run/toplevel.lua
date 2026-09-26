@@ -98,12 +98,13 @@ end
 
 ---@param is_selection bool
 local function make_send_current(is_selection)
+	local text_getter, text_type
 	if is_selection then
-		local text_getter = selection.get_visual_selection
-		local text_type = "selection"
+		text_getter = selection.get_visual_selection
+		text_type = "selection"
 	else
-		local text_getter = selection.get_current_block
-		local text_type = "node"
+		text_getter = selection.get_current_block
+		text_type = "node"
 	end
 
 	--- Send the current visual selection to a WezTerm pane.

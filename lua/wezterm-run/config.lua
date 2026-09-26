@@ -18,30 +18,51 @@ local direction_keys = {
 
 ---@alias RunnerCallback fun():str
 
----@class WeztermRunSetupOpts
+---@class SuffixKeys
+---@field run_current?               string    Keymap suffix          (default: "s")
+---@field run?                       string    Keymap suffix          (default: "r")
+---@field output?                    string    Keymap suffix          (default: "o")
+
+---@class CommandSuffixes
+---@field run_file?                  string    Keymap suffix          (default: "WeztermRunFile")
+---@field send?                      string    Keymap suffix          (default: "WeztermSend")
+---@field output?                    string    Keymap suffix          (default: "WeztermRetrieve")
+
+-- formerly WeztermRunSetupOpts
+---@class WeztermRunConfig
 ---@field direction_keys?            DirectionKeys
 ---@field create_keymaps?            boolean   Enable default keymaps (default: true)
 ---@field default_direction          string                           (default: "Right")
----@field prefix?                    string    Keymap prefix          (default: "<leader>w")
----@field suffix_key_run_current?    string    Keymap suffix          (default: "s")
----@field suffix_key_run?            string    Keymap suffix          (default: "r")
----@field suffix_key_output?         string    Keymap suffix          (default: "o")
+---@field prefix                     string    Keymap prefix          (default: "<leader>w")
+---@field suffix_keys                SuffixKeys
+---@field command_prefixes           CommandPrefixes
 ---@field file_runners?              table<string, CommandSandwich|RunnerCallback>
 ---@field repls?                     table<string, ReplInfo>
----@field clipvoard                  string                           (default: "wl-clipboard")
+---@field clipboard                  string                           (default: "wl-clipboard")
+
+---@class WeztermRunConfig
+---@field default_direction          Direction Default WezTerm pane direction.
+---@field create_keymaps             boolean Automatically bind default keymaps.
+---@field create_commands            boolean Automatically create user commands.
+---@field direction_keys             table<string, Direction>  Map of key suffixes to directions.
+---@field capture                    CaptureMode               Capture strategy mode.
 M = {
 	direction_keys = direction_keys,
 	create_keymaps = true,
 	default_direction = "Right",
 
 	prefix = "<leader>w",
-	suffix_key_run_current = "s",
-	suffix_key_run_file = "r",
-	suffix_key_output = "o",
+	suffix_keys = {
+		run_current = "s",
+		run_file = "r",
+		output = "o",
+	},
 
-	command_prefix_run_current = "WeztermSend",
-	command_prefix_run_file = "WeztermRunFile",
-	command_prefix_output = "WeztermRetrieve",
+	command_prefixes = {
+		run_file = "WeztermRunFile",
+		run_current = "WeztermSend", -- name field `send`?
+		retrieve_output = "WeztermRetrieve",
+	},
 
 	capture = "explicit", -- "auto" | "explicit" | "none"
 	capture_target = "clipboard", -- "clipboard" | "scratch" | "quickfix"

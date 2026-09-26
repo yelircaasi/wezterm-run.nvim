@@ -151,7 +151,18 @@ function M.resolve_pane(opts)
 	local direction = opts.direction or "Right" -- TODO: use opts.default_direction
 	local id = M.pane_by_direction(direction)
 	if not id then
-		return nil, ("No pane found in direction '%s'"):format(direction)
+		-- TODO: USE WEZTERM CLI TO OPEN PANE TO THE RIGHT!
+		-- OLD: return nil, ("No pane found in direction '%s'"):format(direction)
+
+		local cmd = { "wezterm", "cli", "split-pane", "--right" }
+		local output = vim.fn.system(cmd)
+		if vim.v.shell_error ~= 0 then
+			return nil, ("Failed to create pane to the right: %s"):format(output)
+		end
+		id = tonumber(vim.trim(output))
+		if not id then
+			return nil, ("Could not parse pane ID from wezterm CLI output: %s"):format(output)
+		end
 	end
 	return id, nil
 
