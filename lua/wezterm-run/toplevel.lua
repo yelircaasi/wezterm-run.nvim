@@ -131,6 +131,7 @@ local function make_send_current(is_selection)
 			_notify("wezterm-run.nvim: " .. (err or "unknown error"), vim.log.levels.WARN)
 			return
 		end
+		opts.pane_id = pane_id
 
 		-- Snapshot before sending so retrieve_output can diff against it
 		wez.snapshot_pane(opts)
