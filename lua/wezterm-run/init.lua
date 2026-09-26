@@ -36,6 +36,7 @@ M.opts = require("wezterm-run.config")
 ---@param opts? WeztermRunOpts
 ---@return WeztermRunOpts
 local function with_defaults(opts)
+	print("CALLING with_defaults")
 	return helpers.merge_opts(M.opts, opts or {})
 end
 
@@ -47,6 +48,7 @@ end
 ---@param direction     Direction  Direction to send to.
 ---@param keymap_prefix string     Full prefix string.
 local function map_run_current(key, direction, keymap_prefix)
+	print("CALLING map_run_current")
 	local sequence = keymap_prefix .. key
 	print("Mapping sequence " .. sequence)
 	local direction_lower = string.lower(direction)
@@ -67,6 +69,7 @@ end
 ---@param direction      Direction
 ---@param keymap_prefix  string
 local function map_run_file(key, direction, keymap_prefix)
+	print("CALLING map_run_file")
 	local sequence = keymap_prefix .. key
 	local direction_lower = string.lower(direction)
 
@@ -79,6 +82,7 @@ end
 ---@param direction      Direction
 ---@param keymap_prefix  string
 local function map_retrieve_output(key, direction, keymap_prefix)
+	print("CALLING map_retrieve_output")
 	local sequence = keymap_prefix .. key
 	local direction_lower = string.lower(direction)
 
@@ -159,24 +163,28 @@ end
 ---@param text   string
 ---@param opts?  WeztermRunOpts
 function M.send_text(text, opts)
+	print("CALLING M.send_text")
 	return toplevel_functions.send_text(text, with_defaults(opts))
 end
 
 ---Send visual selection to a target WezTerm pane.
 ---@param opts?  WeztermRunOpts
 function M.send_selection(opts)
+	print("CALLING M.send_selection")
 	return toplevel_functions.send_selection(with_defaults(opts))
 end
 
 ---Send current Treesitter node/block to a target WezTerm pane.
 ---@param opts?  WeztermRunOpts
 function M.send_node(opts)
+	print("CALLING M.send_node")
 	return toplevel_functions.send_node(with_defaults(opts))
 end
 
 ---Execute the current buffer file in a target WezTerm pane.
 ---@param opts?  WeztermRunOpts
 function M.run_current_file(opts)
+	print("CALLING M.run_current_file")
 	return toplevel_functions.run_current_file(with_defaults(opts))
 end
 
@@ -184,6 +192,7 @@ end
 ---@param opts?  WeztermRunOpts
 ---@return       string
 function M.make_current_file_command(opts)
+	print("CALLING M.make_current_file_command")
 	return toplevel_functions.make_current_file_command(with_defaults(opts))
 end
 
@@ -191,12 +200,14 @@ end
 ---@param opts?  WeztermRunOpts
 ---@return       string?
 function M.retrieve_output(opts)
+	print("CALLING M.retrieve_output")
 	return toplevel_functions.retrieve_output(with_defaults(opts))
 end
 
 ---Fetch output from target pane and insert/deliver into current buffer.
 ---@param opts?  WeztermRunOpts
 function M.retrieve_and_deliver(opts)
+	print("CALLING M.retrieve_and_deliver")
 	return toplevel_functions.retrieve_and_deliver(with_defaults(opts))
 end
 
@@ -206,6 +217,7 @@ M.open_scratch = toplevel_functions.open_scratch
 ---Setup function to initialize plugin options, keymaps, and commands.
 ---@param config?  WeztermRunConfig  User configuration options.
 function M.setup(config)
+	print("CALLING M.setup")
 	if not toplevel_functions.is_wezterm() then
 		_notify(
 			"wezterm-run.nvim: Skipping setup (not running inside WezTerm). $TERM_PROGRAM is '"

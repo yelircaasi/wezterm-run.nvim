@@ -219,6 +219,7 @@ wezterm --config-file $HOME/repos/wezterm-run.nvim/for_wezterm/wezterm-cfg-for-d
 
 ## Roadmap
 
+- [ ] convert to tl types: [wezterm-types](https://github.com/DrKJeff16/wezterm-types)
 - [ ] read: [lua options](https://wezterm.org/config/lua/general.html)
 - [ ] read: [wezterm](https://wezterm.org/config/lua/wezterm/index.html)
 - [ ] read: [pane](https://wezterm.org/config/lua/pane/index.html)
@@ -233,3 +234,16 @@ wezterm --config-file $HOME/repos/wezterm-run.nvim/for_wezterm/wezterm-cfg-for-d
 - [ ] read: [read](https://wezterm.org/config/lua/window/toast_notification.html)
 - [ ] read: [read](https://wezterm.org/config/lua/keyassignment/index.html)
 - [ ] TODO: use this: [Url](https://wezterm.org/config/lua/wezterm.url/Url.html)
+
+## Manual Tests
+
+- [ ] (with text highlighted) ``: 
+- [ ] ``: 
+- [ ] ``: 
+- [ ] ``: 
+- [ ] ``: 
+- [ ] ``: 
+- [ ] ``: 
+- [ ] ``: 
+- [ ] ``: 
+- [ ] ``: 

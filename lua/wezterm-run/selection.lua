@@ -6,7 +6,7 @@ local M = {}
 --- Works in both visual mode (live) and after leaving visual mode ('' mark pair).
 ---@return string
 function M.get_visual_selection()
-print("CALLING selection.get_visual_selection")
+	print("CALLING selection.get_visual_selection")
 	local mode = vim.fn.mode()
 	local start_pos, end_pos
 
@@ -43,7 +43,7 @@ end
 --- If in normal mode, check for treesitter and if it is available,
 ---   send current 'block'; otherwise fall back to sending line.
 function M.get_current_block()
-print("CALLING selection.get_current_block")
+	print("CALLING selection.get_current_block")
 	-- Attempt treesitter first
 	local ok, node = pcall(vim.treesitter.get_node)
 	if ok and node then

@@ -12,7 +12,7 @@ local M = {}
 ---@param text string
 ---@param opts WeztermRuntimeOpts
 function M.send_text(text, opts)
-print("CALLING M.send_text")
+	print("CALLING toplevel.send_text")
 	if opts.pick then
 		wez.pick_pane(function(pane_id)
 			if pane_id then
@@ -45,7 +45,7 @@ end
 --- Prepare the command to execute the current file.
 ---@param opts? WeztermRuntimeOpts
 function M.make_current_file_command(opts)
-print("CALLING M.make_current_file_command")
+	print("CALLING toplevel.make_current_file_command")
 	local file_path = vim.api.nvim_buf_get_name(0)
 	local file_type = vim.bo.filetype
 
@@ -65,7 +65,7 @@ print("CALLING M.make_current_file_command")
 end
 
 function M.run_current_file(opts)
-print("CALLING M.run_current_file")
+	print("CALLING toplevel.run_current_file")
 	print(vim.inspect(opts))
 	local command = M.make_current_file_command(opts)
 	if not command then
@@ -103,7 +103,7 @@ end
 
 ---@param is_selection bool
 local function make_send_current(is_selection)
-print("CALLING make_send_current")
+	print("CALLING make_send_current")
 	local text_getter, text_type
 	if is_selection then
 		text_getter = selection.get_visual_selection
@@ -119,7 +119,7 @@ print("CALLING make_send_current")
 	---@param opts? WeztermRuntimeOpts
 	---@return nil
 	local function inner_send_current(opts)
-print("CALLING inner_send_current")
+		print("CALLING inner_send_current")
 		local text = text_getter()
 		if text == "" then
 			_notify("wezterm-run.nvim: empty " .. text_type, vim.log.levels.WARN)
@@ -155,7 +155,7 @@ end
 
 ---@param window_info ScratchWindowInfo
 function M.open_scratch(window_info)
-print("CALLING M.open_scratch")
+	print("CALLING toplevel.open_scratch")
 	-- use window ID and/or path to create/identify window and file location
 	-- cases:
 	--     id and path: validate

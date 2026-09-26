@@ -5,7 +5,7 @@ local M = { _snapshots = {} }
 local _notify = print -- vim.notify
 
 function M.is_wezterm()
-print("CALLING wez.is_wezterm")
+	print("CALLING wez.is_wezterm")
 	return vim.env.WEZTERM_PANE ~= nil
 end
 
@@ -29,7 +29,7 @@ end
 --- Retrieve $WEZTERM_PANE (env var set by WezTerm for the current pane).
 ---@return string|nil
 function M.current_pane_id()
-print("CALLING wez.current_pane_id")
+	print("CALLING wez.current_pane_id")
 	local id = vim.env.WEZTERM_PANE
 	if id and id ~= "" then
 		return id
@@ -41,7 +41,7 @@ end
 ---@param direction PaneDirection
 ---@return string|nil pane_id
 function M.pane_by_direction(direction)
-print("CALLING wez.pane_by_direction")
+	print("CALLING wez.pane_by_direction")
 	local pane_id = M.current_pane_id()
 	local cmd = { "wezterm", "cli", "get-pane-direction", direction }
 	if pane_id then
@@ -57,7 +57,7 @@ end
 --- List all WezTerm panes as a table of records.
 ---@return table[PaneRecord]
 function M.list_panes()
-print("CALLING wez.list_panes")
+	print("CALLING wez.list_panes")
 	local out, code = helpers.run({ "wezterm", "cli", "list", "--format", "json" })
 	if code ~= 0 or out == "" then
 		return {}
@@ -87,7 +87,7 @@ end
 ---@param pattern string (Lua pattern or plain substring)
 ---@return string|nil pane_id
 function M.pane_by_pattern(pattern)
-print("CALLING wez.pane_by_pattern")
+	print("CALLING wez.pane_by_pattern")
 	local this_pane = M.current_pane_id()
 	pattern = pattern:lower()
 
@@ -107,7 +107,7 @@ end
 ---@param callback fun(pane_id: string|nil)
 ---@return string
 function M.pick_pane(callback)
-print("CALLING wez.pick_pane")
+	print("CALLING wez.pick_pane")
 	local my_id = M.current_pane_id()
 	local panes = M.list_panes()
 
@@ -140,7 +140,7 @@ end
 ---@param opts WeztermRuntimeOpts
 ---@return string|nil pane_id, string|nil err
 function M.resolve_pane(opts)
-print("CALLING wez.resolve_pane")
+	print("CALLING wez.resolve_pane")
 	if not opts then
 		opts = { direction = "Right" }
 	end
@@ -183,7 +183,7 @@ end
 ---@param text string
 ---@return boolean success, string? err
 function M.send_to_pane(pane_id, text)
-print("CALLING wez.send_to_pane")
+	print("CALLING wez.send_to_pane")
 	text = helpers.ensure_newline(text)
 
 	-- wezterm cli send-text reads from stdin when no positional TEXT arg is given
@@ -205,7 +205,7 @@ end
 --- To be called just before sending text.
 ---@return nil
 function M.snapshot_pane(opts)
-print("CALLING wez.snapshot_pane")
+	print("CALLING wez.snapshot_pane")
 	local pane_id, err = M.resolve_pane(opts)
 	if not pane_id then
 		_notify("wezterm-run.nvim: " .. (err or "unknown error"), vim.log.levels.WARN)
@@ -225,7 +225,7 @@ end
 ---@param target string|nil
 ---@return nil
 function M.deliver_output(output, target)
-print("CALLING wez.deliver_output")
+	print("CALLING wez.deliver_output")
 	if target == "clipboard" then
 		vim.fn.setreg("+", output)
 		vim.fn.setreg('"', output)
@@ -250,7 +250,7 @@ end
 ---@param opts WeztermRuntimeOpts
 ---@return nil
 function M.retrieve_and_deliver(opts)
-print("CALLING wez.retrieve_and_deliver")
+	print("CALLING wez.retrieve_and_deliver")
 	local output = M.retrieve_output(opts)
 	if output then
 		M.deliver_output(output, opts.capture_target)
@@ -263,7 +263,7 @@ end
 ---@param opts WeztermRuntimeOpts
 ---@return string|nil
 function M.retrieve_output(opts)
-print("CALLING wez.retrieve_output")
+	print("CALLING wez.retrieve_output")
 	local pane_id, err = M.resolve_pane(opts)
 	if not pane_id then
 		_notify("wezterm-run.nvim: " .. (err or "unknown error"), vim.log.levels.WARN)
@@ -318,7 +318,7 @@ end
 -- @param callback     fun(post_lines: string[])  called when output is complete
 ---@param opts?        { interval_ms?: integer, max_attempts?: integer }
 local function autoretrieve_output(pane_id, pre_lines, opts)
-print("CALLING autoretrieve_output")
+	print("CALLING autoretrieve_output")
 	-- TODO: add options to config (scour this whole file)
 	local interval_ms = opts.interval_ms or opts.poll_interval_ms or 500
 	local max_attempts = opts.max_attempts or 20 -- 20 * 500ms = 10 seconds
@@ -327,7 +327,7 @@ print("CALLING autoretrieve_output")
 	local prev_snap = nil -- last poll's content, for stability check
 
 	local function poll()
-print("CALLING poll")
+		print("CALLING poll")
 		attempts = attempts + 1
 
 		if attempts > max_attempts then
