@@ -83,6 +83,7 @@ PATH_LOCATION_REGEX = [[
 local helpers = {}
 
 function helpers.get_key_table(config, table_name)
+	wezterm.log_info("CALLING  helpers.get_key_table")
 	key_table = config.key_tables[table_name] or wezterm.gui.default_key_tables()[table_name]
 
 	assert(key_table ~= nil)
@@ -90,6 +91,7 @@ function helpers.get_key_table(config, table_name)
 end
 
 function helpers.update_table(tbl, to_insert)
+	wezterm.log_info("CALLING  helpers.update_table")
 	for _, new_element in ipairs(to_insert) do
 		table.insert(tbl, new_element)
 	end
@@ -98,6 +100,7 @@ function helpers.update_table(tbl, to_insert)
 end
 
 function helpers.parse_location(text)
+	wezterm.log_info("CALLING  helpers.parse_location")
 	if not text then
 		return nil
 	end
@@ -160,6 +163,7 @@ function helpers.parse_location(text)
 end
 
 function helpers.normalize_path(path, cwd)
+	wezterm.log_info("CALLING  helpers.normalize_path")
 	-- Strip common compiler punctuation.
 	path = path:gsub("^[\"'`(<[]+", "")
 	path = path:gsub("[\"'`)>],;]+$", "")
@@ -187,6 +191,7 @@ function helpers.normalize_path(path, cwd)
 end
 
 function helpers.path_exists(path)
+	wezterm.log_info("CALLING  helpers.path_exists")
 	local success = wezterm.run_child_process({
 		"test",
 		"-e",
@@ -198,16 +203,19 @@ end
 
 -- TODO: remove
 function helpers.search_next_path()
+	wezterm.log_info("CALLING  helpers.search_next_path")
 	return act.Search({
 		Regex = PATH_LOCATION_SEARCH_REGEX,
 	})
 end
 
 function helpers.trim(s)
+	wezterm.log_info("CALLING  helpers.trim")
 	return (s:gsub("^%s*(.-)%s*$", "%1"))
 end
 
 function helpers.to_abs_path(p, cwd)
+	wezterm.log_info("CALLING  helpers.to_abs_path")
 	wezterm.log_info("p is " .. p)
 	wezterm.log_info("cwd is " .. cwd)
 	p = helpers.expand_tilde(p)
@@ -238,10 +246,12 @@ function helpers.to_abs_path(p, cwd)
 end
 
 function helpers.shell_quote(s)
+	wezterm.log_info("CALLING  helpers.shell_quote")
 	return "'" .. s:gsub("'", "'\\''") .. "'"
 end
 
 function helpers.expand_tilde(p)
+	wezterm.log_info("CALLING  helpers.expand_tilde")
 	if p:sub(1, 1) == "~" then
 		return wezterm.home_dir .. p:sub(2)
 	end
@@ -255,6 +265,7 @@ end
 -- "path:line"
 -- "path(line)"
 function helpers.split_line_col(token)
+	wezterm.log_info("CALLING  helpers.split_line_col")
 	local path, line, col
 
 	path, line, col = token:match("^(.-):(%d+):(%d+)$")
@@ -292,6 +303,7 @@ local domain = {}
 -- cursor and grow it, using the selected text to detect where the path-like
 -- token starts and ends.
 function domain:token_under_copy_cursor(window, pane)
+	wezterm.log_info("CALLING  domain:token_under_copy_cursor")
 	local act = wezterm.action
 
 	local function selected()
@@ -345,7 +357,10 @@ function domain:token_under_copy_cursor(window, pane)
 end
 
 function domain:token_under_search(window, pane)
+	wezterm.log_info("CALLING  domain:token_under_search")
 	local text = window:get_selection_text_for_pane(pane)
+
+	wezterm.log_info("search selection = " .. string.format("%q", tostring(text)))
 
 	if not text or text == "" then
 		return nil
@@ -356,6 +371,7 @@ end
 
 -- TODO: delete
 function domain:token_under_cursor(line, col)
+	wezterm.log_info("CALLING  domain:token_under_cursor")
 	if not line or line == "" or col < 0 then
 		return nil
 	end
@@ -412,6 +428,7 @@ end
 
 -- Find a running nvim server whose cwd is a parent of abs_path.
 function domain:find_nvim_for_path(abs_path)
+	wezterm.log_info("CALLING  domain:find_nvim_for_path")
 	local handle = io.popen("nvr --serverlist 2>/dev/null")
 	if not handle then
 		return nil
@@ -440,6 +457,7 @@ function domain:find_nvim_for_path(abs_path)
 end
 
 function domain:get_cursor_line(window, pane)
+	wezterm.log_info("CALLING  domain:get_cursor_line")
 	local pos = pane:get_cursor_position()
 
 	if not pos then
@@ -466,6 +484,7 @@ function domain:get_cursor_line(window, pane)
 end
 
 function domain:get_path_from_token(window, pane, token)
+	wezterm.log_info("CALLING  domain:get_path_from_token")
 	if not token then
 		window:toast_notification("wezterm", "No token under cursor", nil, 2000)
 		return nil
@@ -493,18 +512,21 @@ function domain:get_path_from_token(window, pane, token)
 end
 
 function domain:get_path_under_cursor(window, pane)
+	wezterm.log_info("CALLING  domain:get_path_under_cursor")
 	local token = domain:token_under_copy_cursor(window, pane)
 
 	return domain:get_path_from_token(window, pane, token)
 end
 
 function domain:get_path_under_search(window, pane)
+	wezterm.log_info("CALLING  domain:get_path_under_search")
 	local token = domain:token_under_search(window, pane)
 
 	return domain:get_path_from_token(window, pane, token)
 end
 
 function domain:open_path(abs_path, nvim_server, line_no, col_no)
+	wezterm.log_info("CALLING  domain:open_path")
 	if nvim_server then
 		if line_no then
 			local cmd = string.format(":e %s<CR>", abs_path)
@@ -556,14 +578,51 @@ end
 
 local M = {}
 
-function M.apply(config)
+local _copy_and_search = {
+	open_path = {
+		mods = "ALT",
+		key = "o",
+	},
+	next_match = {
+		mods = "ALT",
+		key = "n",
+	},
+	prior_match = {
+		mods = "ALT",
+		key = "N",
+	},
+	path_search = {
+		mods = "ALT",
+		key = "p",
+	},
+}
+
+M.defaults = {
+	global = {
+		activate_copy_mode = {
+			mods = "ALT",
+			key = "u",
+		},
+		path_search = {
+			key = "p",
+			mods = "ALT",
+		},
+	},
+	copy_mode = _copy_and_search,
+	search_mode = _copy_and_search,
+}
+
+function M.apply(config, wezterm_config)
 	local act = wezterm.action
+	local wezcfg = wezterm_config or M.defaults
 
 	print("applying wezterm-run")
 	config.keys = config.keys or {}
 	config.key_tables = config.key_tables or {}
 
 	local function open_path_under_cursor(window, pane)
+		wezterm.log_info("active key table = " .. tostring(window:active_key_table()))
+
 		local abs_path, line_no, col_no = domain:get_path_under_cursor(window, pane)
 
 		if not abs_path then
@@ -583,6 +642,8 @@ function M.apply(config)
 	end
 
 	local function open_search_result_path(window, pane)
+		wezterm.log_info("active key table = " .. tostring(window:active_key_table()))
+
 		local abs_path, line_no, col_no = domain:get_path_under_search(window, pane)
 
 		if not abs_path then
@@ -601,79 +662,75 @@ function M.apply(config)
 		window:perform_action(act.CopyMode("Close"), pane)
 	end
 
-	local path_search_keybind = {
-		key = "p",
-		mods = "ALT",
-		action = act.Multiple({
-			act.Search({ Regex = PATH_LOCATION_SEARCH_REGEX }),
-			act.CopyMode("AcceptPattern"),
-		}),
-	}
+	local function open_path(window, pane)
+		wezterm.log_info("active key table = " .. tostring(window:active_key_table()))
+	end
 
-	-- Global keybinds --------------------------------------------------------
+	local path_search_action = act.Search({ Regex = PATH_LOCATION_SEARCH_REGEX })
 
-	local config_keys = config.keys
+	-- Global / CopyMode / SearchMode keybinds ------------------------------------------
 
 	local global_binds = {
 		{
-			key = "u",
-			mods = "ALT",
-			action = act.ActivateCopyMode,
+			key = wezcfg.global.activate_copy_mode.key,
+			mods = wezcfg.global.activate_copy_mode.mods,
+			action = act.Multiple({
+				act.ActivateCopyMode,
+				act.CopyMode("ClearPattern"),
+				act.CopyMode("ClearSelectionMode"),
+			}),
 		},
-		path_search_keybind,
+		{
+			key = wezcfg.global.path_search.key,
+			mods = wezcfg.global.path_search.mods,
+			action = path_search_action,
+		},
 	}
-
-	config.keys = helpers.update_table(config_keys, global_binds)
-
-	-- CopyMode keybinds ------------------------------------------------------
-
-	local copy_mode = helpers.get_key_table(config, "copy_mode")
 
 	local copy_mode_binds = {
 		{
-			key = "o",
-			mods = "ALT",
+			key = wezcfg.copy_mode.open_path.key,
+			mods = wezcfg.copy_mode.open_path.mods,
 			action = wezterm.action_callback(open_path_under_cursor),
 		},
 		{
-			key = "n",
-			mods = "ALT",
+			key = wezcfg.copy_mode.next_match.key,
+			mods = wezcfg.copy_mode.next_match.mods,
 			action = act.CopyMode("NextMatch"),
 		},
 		{
-			key = "N",
-			mods = "ALT",
+			key = wezcfg.copy_mode.prior_match.key,
+			mods = wezcfg.copy_mode.prior_match.mods,
 			action = act.CopyMode("PriorMatch"),
 		},
-		path_search_keybind,
 		{
-			key = "o",
-			mods = "NONE",
-
-			action = act.QuickSelectArgs({
-				label = "open path/location in nvim",
-
-				patterns = {
-					[[File\s+["'][^"']+["']\s*,\s*line\s+\d+]],
-					[[[^ \t\n"'<>|]+:\d+(?::\d+)?]],
-					[[[^ \t\n"'<>|]+\(\d+(?:,\d+)?\)]],
-					[[(?:/|%./|%.%./|~/)[^ \t\n"'<>|]+]],
-				},
-
-				scope_lines = 1000,
-
-				action = wezterm.action_callback(function(window, pane)
-					open_location(window, pane)
-				end),
-			}),
+			key = wezcfg.copy_mode.path_search.key,
+			mods = wezcfg.copy_mode.path_search.mods,
+			action = path_search_action,
 		},
+
+		-- {
+		-- 	key = wezcfg.copy_mode.open_path.key,
+		-- 	mods = wezcfg.copy_mode.open_path.mods,
+
+		-- 	action = act.QuickSelectArgs({
+		-- 		label = "open path/location in nvim",
+
+		-- 		patterns = {
+		-- 			[[File\s+["'][^"']+["']\s*,\s*line\s+\d+]],
+		-- 			[[[^ \t\n"'<>|]+:\d+(?::\d+)?]],
+		-- 			[[[^ \t\n"'<>|]+\(\d+(?:,\d+)?\)]],
+		-- 			[[(?:/|%./|%.%./|~/)[^ \t\n"'<>|]+]],
+		-- 		},
+
+		-- 		scope_lines = 1000,
+
+		-- 		action = wezterm.action_callback(function(window, pane)
+		-- 			open_location(window, pane)
+		-- 		end),
+		-- 	}),
+		-- },
 	}
-
-	config.key_tables.copy_mode = helpers.update_table(copy_mode, copy_mode_binds)
-
-	-- SearchMode keybinds ----------------------------------------------------
-
-	local search_mode = helpers.get_key_table(config, "search_mode")
 
 	local search_mode_binds = {
 		-- Accept the current search match and immediately hand off to the
@@ -696,30 +753,38 @@ function M.apply(config)
 		-- },
 
 		{
-			key = "n",
-			mods = "ALT",
+			key = wezcfg.search_mode.next_match.key,
+			mods = wezcfg.search_mode.next_match.mods,
 			action = act.CopyMode("NextMatch"),
 		},
 		{
-			key = "N",
-			mods = "ALT",
+			key = wezcfg.search_mode.prior_match.key,
+			mods = wezcfg.search_mode.prior_match.mods,
 			action = act.CopyMode("PriorMatch"),
 		},
 		{
-			key = "p",
-			mods = "ALT",
-			action = act.Search({ Regex = PATH_LOCATION_SEARCH_REGEX }),
+			key = wezcfg.search_mode.open_path.key,
+			mods = wezcfg.search_mode.open_path.mods,
+			action = wezterm.action_callback(open_search_result_path),
+			-- action = act.Multiple({
+			-- 	-- act.CopyMode("Close"),
+			-- 	wezterm.action_callback(open_search_result_path),
+			-- }),
 		},
 		{
-			key = "o",
-			mods = "ALT",
-			action = act.Multiple({
-				act.CopyMode("Close"),
-				wezterm.action_callback(open_search_result_path),
-			}),
+			key = wezcfg.search_mode.path_search.key,
+			mods = wezcfg.search_mode.path_search.mods,
+			action = act.Search({ Regex = PATH_LOCATION_SEARCH_REGEX }),
 		},
 	}
 
+	-- Apply keybinds ---------------------------------------------------------
+
+	local copy_mode = helpers.get_key_table(config, "copy_mode")
+	local search_mode = helpers.get_key_table(config, "search_mode")
+
+	config.keys = helpers.update_table(config.keys, global_binds)
+	config.key_tables.copy_mode = helpers.update_table(copy_mode, copy_mode_binds)
 	config.key_tables.search_mode = helpers.update_table(search_mode, search_mode_binds)
 
 	-- For debugging ----------------------------------------------------------
